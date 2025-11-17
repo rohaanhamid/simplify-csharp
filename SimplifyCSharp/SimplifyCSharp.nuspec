@@ -15,4 +15,8 @@
     <copyright>Copyright 2018</copyright>
     <tags>Tag1 Tag2</tags>
   </metadata>
+  <files>
+    <file src="SimplifyCSharp\\bin\\Release\\net10.0\\*.dll" target="lib\\net10.0" />
+    <file src="SimplifyCSharp\\bin\\Release\\net6.0\\*.dll" target="lib\\net6.0" />
+  </files>
 </package>
