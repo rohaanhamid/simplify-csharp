@@ -7,8 +7,18 @@ Polyline simplifier
   * Highly optimized for C#
   * Avoids unncessary memory allocations
   * Completely non-intrusive and can be used with any class or struct. Avoids any interfaces to prevent issues with boxing/unboxing when working with structs. 
-  * Requires .NET 3.5 and above
+  * Requires .NET 6.0 and above
   * Comes with a demo
+
+## Installation
+
+Install the package via NuGet:
+
+```
+dotnet add package SimplifyCSharp --version 1.0.0
+```
+
+Download from [NuGet](https://www.nuget.org/packages/SimplifyCSharp)
 
 # Example #
 Use the SimplificationHelpers class to quickly simplify a list of System.Windows.Point objects.
