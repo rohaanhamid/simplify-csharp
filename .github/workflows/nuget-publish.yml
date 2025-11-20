@@ -1,9 +1,6 @@
 name: Release - Pack and Publish NuGet (manual)
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
