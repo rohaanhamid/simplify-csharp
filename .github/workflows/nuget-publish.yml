@@ -1,23 +1,76 @@
-name: CI - Pack and Publish NuGet
+name: Release - Pack and Publish NuGet (manual)
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create (e.g. v1.2.3)'
+        required: true
+      name:
+        description: 'Release name (optional)'
+        required: false
+        default: ''
+      body:
+        description: 'Release body (optional)'
+        required: false
+        default: ''
+      draft:
+        description: 'Create as draft? (true/false)'
+        required: false
+        default: 'false'
+      prerelease:
+        description: 'Create as prerelease? (true/false)'
+        required: false
+        default: 'false'
 
 jobs:
-  build-and-publish:
+  release:
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '10.0.x'
+
+      - name: Configure git
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine tag and package version
+        id: determine
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            $tag = '${{ github.event.inputs.tag }}'
+            Write-Host "Manual dispatch requested; will create tag $tag"
+            git tag -a $tag -m "release $tag"
+            git push origin $tag
+          } else {
+            if ($env:GITHUB_REF -like 'refs/tags/*') {
+              $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+              Write-Host "Triggered by tag push: $tag"
+            } else {
+              Write-Error "No tag found in ref: $env:GITHUB_REF"
+              exit 1
+            }
+          }
+
+          if ($tag.StartsWith('v')) { $pkgVer = $tag.Substring(1) } else { $pkgVer = $tag }
+          Write-Host "Using tag: $tag"
+          Write-Host "Using package version: $pkgVer"
+          echo "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          echo "PACKAGE_VERSION=$pkgVer" >> $env:GITHUB_ENV
 
       - name: Restore
         run: dotnet restore
@@ -26,15 +79,41 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack
-        run: dotnet pack SimplifyCSharp/SimplifyCSharp.csproj -c Release -o ./artifacts --no-build
+        run: dotnet pack SimplifyCSharp/SimplifyCSharp.csproj -c Release -o ./artifacts --no-build -p:PackageVersion=$env:PACKAGE_VERSION
 
-      - name: Publish to NuGet
+      - name: Find package asset
+        id: find_asset
+        shell: pwsh
+        run: |
+          $nupkg = Get-ChildItem -Path .\artifacts -File -Filter "*.nupkg" | Select-Object -First 1
+          if (-not $nupkg) { Write-Error "No .nupkg found in ./artifacts"; exit 1 }
+          Write-Host "Found package: $($nupkg.FullName)"
+          echo "PACKAGE_ASSET=$($nupkg.FullName)" >> $env:GITHUB_ENV
+          echo "PACKAGE_FILENAME=$($nupkg.Name)" >> $env:GITHUB_ENV
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: ${{ github.event.inputs.name }}
+          body: ${{ github.event.inputs.body }}
+          draft: ${{ github.event.inputs.draft }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+
+      - name: Upload package to GitHub Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.PACKAGE_ASSET }}
+          asset_name: ${{ env.PACKAGE_FILENAME }}
+          asset_content_type: application/octet-stream
+
+      - name: Publish to NuGet (optional)
         if: ${{ secrets.NUGET_API_KEY }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         shell: pwsh
         run: |
-          Write-Host "Listing artifacts:"
-          Get-ChildItem -Path .\artifacts -File -Recurse | ForEach-Object { Write-Host $_.FullName }
-          Write-Host "Pushing packages to nuget.org"
-          dotnet nuget push .\artifacts\*.nupkg --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          Write-Host "Pushing package to nuget.org: $env:PACKAGE_ASSET"
+          dotnet nuget push $env:PACKAGE_ASSET --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
