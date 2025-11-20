@@ -10,5 +10,19 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>SimplifyCSharp</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>rohaanhamid</Authors>
+    <Company>rohaanhamid</Company>
+    <Description>Lightweight implementation of Douglas-Peucker and radial-distance simplification algorithms for 2D and 3D point sequences.</Description>
+    <PackageTags>simplify geometry douglas-peucker radial-distance</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/rohaanhamid/simplify-csharp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
   <!-- Source files are included implicitly by SDK-style projects. -->
 </Project>
