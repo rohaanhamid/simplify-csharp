@@ -21,9 +21,13 @@
     <RepositoryUrl>https://github.com/rohaanhamid/simplify-csharp</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReadmeFile>../README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
 
   <!-- Source files are included implicitly by SDK-style projects. -->
 </Project>
