@@ -29,8 +29,12 @@ jobs:
         run: dotnet pack SimplifyCSharp/SimplifyCSharp.csproj -c Release -o ./artifacts --no-build
 
       - name: Publish to NuGet
+        if: ${{ secrets.NUGET_API_KEY }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        shell: pwsh
         run: |
-          echo "Pushing packages to nuget.org"
-          dotnet nuget push ./artifacts/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          Write-Host "Listing artifacts:"
+          Get-ChildItem -Path .\artifacts -File -Recurse | ForEach-Object { Write-Host $_.FullName }
+          Write-Host "Pushing packages to nuget.org"
+          dotnet nuget push .\artifacts\*.nupkg --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
